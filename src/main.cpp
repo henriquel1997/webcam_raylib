@@ -12,10 +12,10 @@ struct Pixel {
 };
 
 struct PixelESCAPI {
-  unsigned char x;
   unsigned char r;
   unsigned char g;
   unsigned char b;
+  unsigned char x;
 };
 
 Texture2D createTexture(int width, int height){
@@ -38,8 +38,8 @@ int main(int argc, char* argv[]){
     }
 
     struct SimpleCapParams capture;
-    capture.mWidth = 320;
-    capture.mHeight = 240;
+    capture.mWidth = 640;
+    capture.mHeight = 360;
     auto bufferSize = capture.mWidth * capture.mHeight;
     capture.mTargetBuf = new int[bufferSize];
 
@@ -62,10 +62,13 @@ int main(int argc, char* argv[]){
     doCapture(0);
 
     bool saveNextCapture = false;
+    Pixel selectedColor = {};
 
     // Main game loop
     while (!WindowShouldClose()){    // Detect window close button or ESC key
         // Update
+        Vector2 mousePos = GetMousePosition();
+
         if(!saveNextCapture && IsKeyPressed(KEY_ENTER)){
           saveNextCapture = true;
         }
@@ -76,15 +79,19 @@ int main(int argc, char* argv[]){
           PixelESCAPI* pixelsCamera = (PixelESCAPI*) capture.mTargetBuf;
           Pixel* pixels = (Pixel*) capture.mTargetBuf;
           for(int i = 0; i < bufferSize; i++){
-            pixels[i].g = pixelsCamera[i].r;
-            pixels[i].r = pixelsCamera[i].g;
-            pixels[i].b = pixelsCamera[i].b;
+            pixels[i].b = pixelsCamera[i].r;
+            pixels[i].g = pixelsCamera[i].g;
+            pixels[i].r = pixelsCamera[i].b;
           }
 
           if(saveNextCapture){
             printf("Saving capture\n");
             stbi_write_bmp("capture.bmp", capture.mWidth, capture.mHeight, 3, pixels);
             saveNextCapture = false;
+          }
+
+          if(mousePos.x > 0 && mousePos.y > 0 && mousePos.x < capture.mWidth && mousePos.y < capture.mHeight){
+            selectedColor = pixels[((int)(mousePos.y) * capture.mHeight) + (int)mousePos.x];
           }
 
           UpdateTexture(texture, pixels);
@@ -99,6 +106,14 @@ int main(int argc, char* argv[]){
 
           ClearBackground(WHITE);
           DrawTexture(texture, 0, 0, WHITE);
+          char text[50];
+          sprintf(
+            text, 
+            "Mouse: %i, %i / Color: R: %i, G: %i, B: %i", 
+            (int)mousePos.x, (int)mousePos.y, 
+            selectedColor.r, selectedColor.g, selectedColor.b
+          );
+          DrawText(text, 0, 0, 12, YELLOW);
 
         EndDrawing();
         //----------------------------------------------------------------------------------
